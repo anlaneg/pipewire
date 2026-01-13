@@ -50,6 +50,7 @@ static inline DBusPendingCall *send_with_reply(DBusConnection *conn,
 {
 	DBusPendingCall *pending_call;
 
+	/*发送请求并等待响应*/
 	if (!dbus_connection_send_with_reply(conn, m, &pending_call, DBUS_TIMEOUT_USE_DEFAULT))
 		return NULL;
 

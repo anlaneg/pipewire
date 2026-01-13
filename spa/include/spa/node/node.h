@@ -685,19 +685,22 @@ SPA_API_NODE int spa_node_set_io(struct spa_node *object,
 SPA_API_NODE int spa_node_send_command(struct spa_node *object,
 		const struct spa_command *command)
 {
-	return spa_api_method_r(int, -ENOTSUP, spa_node, &object->iface, send_command, 0,
-			command);
+	/*调用object->iface.cb.funcs.send_command方法*/
+	return spa_api_method_r(int, -ENOTSUP, spa_node, &object->iface, send_command, 0/*版本号*/,
+			command/*send_command函数参数*/);
 }
 SPA_API_NODE int spa_node_add_port(struct spa_node *object,
 			enum spa_direction direction, uint32_t port_id,
 			const struct spa_dict *props)
 {
+	/*调用object->iface.cb.funcs.add_port方法*/
 	return spa_api_method_r(int, -ENOTSUP, spa_node, &object->iface, add_port, 0,
 			direction, port_id, props);
 }
 SPA_API_NODE int spa_node_remove_port(struct spa_node *object,
 			enum spa_direction direction, uint32_t port_id)
 {
+	/*调用object->iface.cb.funcs.remove_port方法*/
 	return spa_api_method_r(int, -ENOTSUP, spa_node, &object->iface, remove_port, 0,
 			direction, port_id);
 }
@@ -706,6 +709,7 @@ SPA_API_NODE int spa_node_port_enum_params(struct spa_node *object, int seq,
 				 uint32_t id, uint32_t start, uint32_t max,
 				 const struct spa_pod *filter)
 {
+	/*调用object->iface.cb.funcs.port_enum_params方法*/
 	return spa_api_method_r(int, -ENOTSUP, spa_node, &object->iface, port_enum_params, 0,
 			seq, direction, port_id, id, start, max, filter);
 }
@@ -715,6 +719,7 @@ SPA_API_NODE int spa_node_port_set_param(struct spa_node *object,
 			       uint32_t id, uint32_t flags,
 			       const struct spa_pod *param)
 {
+	/*调用object->iface.cb.funcs.port_set_param方法*/
 	return spa_api_method_r(int, -ENOTSUP, spa_node, &object->iface, port_set_param, 0,
 			direction, port_id, id, flags, param);
 }

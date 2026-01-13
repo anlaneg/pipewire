@@ -1082,7 +1082,9 @@ static DBusHandlerResult hsphfpd_parse_endpoint_properties(struct impl *backend,
 		free(t_path);
 		return DBUS_HANDLER_RESULT_NEED_MEMORY;
 	}
-	spa_bt_transport_set_implementation(t, &hsphfpd_transport_impl, t);
+
+	/*设置t->impl为hsphfpd_transport_impl*/
+	spa_bt_transport_set_implementation(t, &hsphfpd_transport_impl, t/*首参指名为T*/);
 
 	t->device = d;
 	spa_list_append(&t->device->transport_list, &t->device_link);

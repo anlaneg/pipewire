@@ -687,7 +687,7 @@ struct spa_bt_transport {
 	struct spa_bt_transport_volume volumes[SPA_BT_VOLUME_ID_TERM];
 
 	int acquire_refcount;
-	bool acquired;
+	bool acquired;/*标明是否已触发acquire调用*/
 	bool keepalive;
 	int error_count;
 	uint64_t last_error_time;
@@ -746,8 +746,9 @@ int spa_bt_transport_ensure_sco_io(struct spa_bt_transport *t, struct spa_loop *
 #define spa_bt_transport_add_listener(t,listener,events,data) \
         spa_hook_list_append(&(t)->listener_list, listener, events, data)
 
+/*设置transport对应的impl*/
 #define spa_bt_transport_set_implementation(t,_impl,_data) \
-			(t)->impl = SPA_CALLBACKS_INIT(_impl, _data)
+			(t)->impl = SPA_CALLBACKS_INIT(_impl/*IMPL实现类型指针*/, _data/*IMPL函数首个参数*/)
 
 #define spa_bt_transport_impl(t,m,v,...)		\
 ({							\

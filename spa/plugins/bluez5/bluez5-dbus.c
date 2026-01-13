@@ -3381,13 +3381,14 @@ int spa_bt_transport_acquire(struct spa_bt_transport *transport, bool optional)
 		return -EIO;
 
 	if (!transport->acquired)
+		/*触发acquire(同步)*/
 		res = spa_bt_transport_impl(transport, acquire, 0, optional);
 	else
 		res = 0;
 
 	if (res >= 0) {
 		transport->acquire_refcount = 1;
-		transport->acquired = true;
+		transport->acquired = true;/*指明已触发*/
 	}
 
 	return res;
@@ -4098,13 +4099,14 @@ static void transport_acquire_reply(DBusPendingCall *pending, void *user_data)
 	}
 
 	if (transport->fd >= 0) {
+		/*fd已获取到,但重复响应*/
 		spa_log_error(monitor->log, "transport %p: invalid duplicate acquire", transport);
 		ret = -EINVAL;
 		goto finish;
 	}
 
 	if (!dbus_message_get_args(r, &err,
-				   DBUS_TYPE_UNIX_FD, &transport->fd,
+				   DBUS_TYPE_UNIX_FD, &transport->fd,/*取得响应fd*/
 				   DBUS_TYPE_UINT16, &transport->read_mtu,
 				   DBUS_TYPE_UINT16, &transport->write_mtu,
 				   DBUS_TYPE_INVALID)) {
@@ -4204,6 +4206,7 @@ exit:
 	transport_check_iso_ready(monitor);
 }
 
+/*通过dbus调用接口"org.bluez.MediaTransport1"的acquire方法*/
 static int do_transport_acquire(struct spa_bt_transport *transport)
 {
 	struct spa_bt_monitor *monitor = transport->monitor;
@@ -4236,11 +4239,11 @@ acquire:
 	m = dbus_message_new_method_call(BLUEZ_SERVICE,
 					 transport->path,
 					 BLUEZ_MEDIA_TRANSPORT_INTERFACE,
-					 "Acquire");
+					 "Acquire");/*调用acquire接口获得音乐fd*/
 	if (m == NULL)
 		return -ENOMEM;
 
-	transport->acquire_call = send_with_reply(monitor->conn, m, transport_acquire_reply, transport);
+	transport->acquire_call = send_with_reply(monitor->conn, m, transport_acquire_reply/*此回调用于处理bluez的响应*/, transport);
 	if (!transport->acquire_call)
 		return -EIO;
 
@@ -4509,8 +4512,8 @@ static int transport_set_delay(void *data, int64_t delay_nsec)
 }
 
 static const struct spa_bt_transport_implementation transport_impl = {
-	SPA_VERSION_BT_TRANSPORT_IMPLEMENTATION,
-	.acquire = transport_acquire,
+	SPA_VERSION_BT_TRANSPORT_IMPLEMENTATION,/*版本*/
+	.acquire = transport_acquire,/*获取fd*/
 	.release = transport_release,
 	.set_volume = transport_set_volume,
 	.set_delay = transport_set_delay,
@@ -4545,6 +4548,7 @@ static int setup_asha_transport(struct spa_bt_remote_endpoint *remote_endpoint, 
 		return -EINVAL;
 	}
 
+	/*设置t->impl为transport_impl*/
 	spa_bt_transport_set_implementation(transport, &transport_impl, transport);
 
 	spa_log_debug(monitor->log, "Created ASHA transport for %s", remote_endpoint->transport_path);

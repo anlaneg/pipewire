@@ -360,6 +360,7 @@ static int rfcomm_new_transport(struct rfcomm *rfcomm, int codec_id)
 		free(pathfd);
 		goto fail;
 	}
+	//*设置t->impl为sco_transport_impl*/
 	spa_bt_transport_set_implementation(t, &sco_transport_impl, t);
 
 	t->device = rfcomm->device;

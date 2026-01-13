@@ -136,6 +136,7 @@ static struct spa_bt_transport *_transport_create(struct impl *backend,
 		free(t_path);
 		return NULL;
 	}
+	//*设置t->impl*/
 	spa_bt_transport_set_implementation(t, impl, t);
 
 	t->device = device;

@@ -116,15 +116,15 @@ extern "C" {
  * to the functions.  The structure should also contain a version field that
  * is checked. */
 struct spa_callbacks {
-	const void *funcs;
-	void *data;
+	const void *funcs;/*包含回调方法的结构体*/
+	void *data;/*回调方法的首个参数*/
 };
 
 /** Check if a callback \a c is of at least version \a v */
-#define SPA_CALLBACK_VERSION_MIN(c,v) ((c) && ((v) == 0 || (c)->version > (v)-1))
+#define SPA_CALLBACK_VERSION_MIN(c,v) ((c) && ((v) == 0/*版本号为0*/ || (c)->version > (v)-1)/*c版本号大于等于给定的版本*/)
 
 /** Check if a callback \a c has method \a m of version \a v */
-#define SPA_CALLBACK_CHECK(c,m,v) (SPA_CALLBACK_VERSION_MIN(c,v) && (c)->m)
+#define SPA_CALLBACK_CHECK(c,m/*方法名*/,v/*版本号*/) (SPA_CALLBACK_VERSION_MIN(c,v) && (c)->m/*c必须有此方法*/)
 
 /**
  * Initialize the set of functions \a funcs as a \ref spa_callbacks, together
@@ -137,7 +137,7 @@ struct spa_callbacks {
 struct spa_interface {
 	const char *type;
 	uint32_t version;
-	struct spa_callbacks cb;
+	struct spa_callbacks cb;/*保存回调*/
 };
 
 /**
@@ -203,10 +203,11 @@ struct spa_interface {
  *
  * The return value is stored in \a res.
  */
-#define spa_callbacks_call_res(callbacks,type,res,method,vers,...)		\
+#define spa_callbacks_call_res(callbacks/*保存回调的结构体*/,type/*包含此方法的结构体类型名称*/,res/*返回值变量*/,method/*方法名*/,vers/*预期的最小版本号*/,.../*方法其它参数*/)		\
 ({										\
 	const type *_f = (const type *) (callbacks)->funcs;			\
 	if (SPA_LIKELY(SPA_CALLBACK_CHECK(_f,method,vers)))			\
+		/*版本调验通过,调用method函数*/\
 		res = (_f->method)((callbacks)->data, ## __VA_ARGS__);		\
 	res;									\
 })
@@ -247,7 +248,7 @@ struct spa_interface {
  *
  * The return value is stored in \a res.
  */
-#define spa_interface_call_res(iface,method_type,res,method,vers,...)			\
+#define spa_interface_call_res(iface/*包含方法的不透明结构体(需含cb成员)*/,method_type/*包含此方法的结构体类型名称*/,res/*返回值变量*/,method/*方法名称*/,vers/*预期的最小版本号*/,...)			\
 	spa_callbacks_call_res(&(iface)->cb,method_type,res,method,vers,##__VA_ARGS__)
 
 #define spa_interface_call_fast_res(iface,method_type,res,method,vers,...)		\
@@ -277,13 +278,13 @@ struct spa_interface {
 	spa_interface_call(_i, struct type ##_methods,			\
 			method, version, ##__VA_ARGS__);		\
 })
-#define spa_api_method_r(rtype,def,type,o,method,version,...)		\
+#define spa_api_method_r(rtype/*返回值类型*/,def/*默认返回值*/,type/*类型名称前缀*/,o/*必须为spa_interface类型变量*/,method/*方法名*/,version/*预期的最小版本号*/,.../*回调参数*/)		\
 ({									\
-	rtype _res = def;						\
+	rtype _res = def;/*定义返回值*/						\
 	struct spa_interface *_i = o;			\
 	spa_interface_call_res(_i, struct type ##_methods,		\
 			_res, method, version, ##__VA_ARGS__);		\
-	_res;								\
+	_res;/*传回返回值*/								\
 })
 #define spa_api_method_null_v(type,co,o,method,version,...)		\
 ({									\
