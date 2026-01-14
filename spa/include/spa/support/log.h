@@ -101,9 +101,9 @@ struct spa_log_topic_enum {
 #define SPA_VERSION_LOG_TOPIC_ENUM	0
 	uint32_t version;
 	/** Array of pointers to log topics */
-	struct spa_log_topic * const * const topics;
+	struct spa_log_topic * const * const topics;/*数组起始地址*/
 	/** End of topics array */
-	struct spa_log_topic * const * const topics_end;
+	struct spa_log_topic * const * const topics_end;/*数组终止地址*/
 };
 
 

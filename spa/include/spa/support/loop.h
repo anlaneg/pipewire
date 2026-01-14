@@ -405,6 +405,7 @@ SPA_API_LOOP int spa_loop_control_iterate(struct spa_loop_control *object,
 SPA_API_LOOP int spa_loop_control_iterate_fast(struct spa_loop_control *object,
 		int timeout)
 {
+	/*调用object->iface.cb.funcs.iterate*/
 	return spa_api_method_fast_r(int, -ENOTSUP,
 			spa_loop_control, &object->iface, iterate, 0, timeout);
 }

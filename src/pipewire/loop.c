@@ -62,6 +62,7 @@ struct pw_loop *pw_loop_new(const struct spa_dict *props)
 	else
 		lib = NULL;
 
+	/*加载system_handle*/
 	impl->system_handle = pw_load_spa_handle(lib,
 			SPA_NAME_SUPPORT_SYSTEM,
 			props, n_support, support);
@@ -71,6 +72,7 @@ struct pw_loop *pw_loop_new(const struct spa_dict *props)
 		goto error_free;
 	}
 
+		/*通过systeem_handle->get_interface,获得iface*/
         if ((res = spa_handle_get_interface(impl->system_handle,
 					    SPA_TYPE_INTERFACE_System,
 					    &iface)) < 0) {

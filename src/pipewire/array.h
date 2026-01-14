@@ -114,6 +114,7 @@ PW_API_ARRAY int pw_array_ensure_size(struct pw_array *arr, size_t size)
 	need = arr->size + size;
 
 	if (SPA_UNLIKELY(alloc < need)) {
+		/*已申请大小小于真实需要的大小，需要扩大*/
 		void *data;
 		if (arr->extend == 0)
 			return -ENOSPC;

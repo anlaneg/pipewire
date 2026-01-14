@@ -27,6 +27,7 @@ int spa_handle_factory_enum(const struct spa_handle_factory **factory, uint32_t 
 	spa_return_val_if_fail(factory != NULL, -EINVAL);
 	spa_return_val_if_fail(index != NULL, -EINVAL);
 
+	/*通过index获取其对应的factory,当index中对应的值没有对应的factory时，函数返回0*/
 	switch (*index) {
 	case 0:
 		*factory = &spa_bluez5_dbus_factory;
@@ -59,8 +60,8 @@ int spa_handle_factory_enum(const struct spa_handle_factory **factory, uint32_t 
 		*factory = &spa_bluez5_midi_node_factory;
 		break;
 	default:
-		return 0;
+		return 0;/*其它的均返回0*/
 	}
-	(*index)++;
-	return 1;
+	(*index)++;/*索引增加*/
+	return 1;/*返回1，表示已设置*/
 }

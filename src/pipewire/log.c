@@ -29,7 +29,7 @@ SPA_EXPORT
 struct spa_log_topic * const PW_LOG_TOPIC_DEFAULT;
 
 struct topic {
-	struct spa_list link;
+	struct spa_list link;/*用于串连到topics*/
 	struct spa_log_topic *t;
 	unsigned int refcnt;
 };
@@ -140,6 +140,7 @@ void pw_log_topic_register(struct spa_log_topic *t)
 
 	topic = find_topic(t);
 	if (!topic) {
+		/*未注册，现注册*/
 		update_topic_level(t);
 		topic = add_topic(t);
 		if (!topic)

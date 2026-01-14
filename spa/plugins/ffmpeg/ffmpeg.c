@@ -68,6 +68,7 @@ static const AVCodec *find_codec_by_index(uint32_t index)
 	const AVCodec *c = NULL;
 
 	if (index == 0) {
+		/*首位，设静态变量到初始状态*/
 		av_iter_data = NULL;
 		next_index = 0;
 	}
@@ -127,10 +128,12 @@ int spa_handle_factory_enum(const struct spa_handle_factory **factory, uint32_t 
 		return 0;
 
 	if (av_codec_is_encoder(c)) {
+		/*编码*/
 		snprintf(name, sizeof(name), "encoder.%s", c->name);
 		f.get_size = spa_ffmpeg_enc_get_size;
 		f.init = ffmpeg_enc_init;
 	} else {
+		/*解码*/
 		snprintf(name, sizeof(name), "decoder.%s", c->name);
 		f.get_size = spa_ffmpeg_dec_get_size;
 		f.init = ffmpeg_dec_init;

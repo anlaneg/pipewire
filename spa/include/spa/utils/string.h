@@ -225,6 +225,7 @@ SPA_API_STRING int spa_vscnprintf(char *buffer, size_t size, const char *format,
 
 	spa_assert_se((ssize_t)size > 0);
 
+	/*格式化*/
 	r = vsnprintf(buffer, size, format, args);
 	if (SPA_UNLIKELY(r < 0))
 		buffer[0] = '\0';

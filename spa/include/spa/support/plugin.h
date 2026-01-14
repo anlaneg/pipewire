@@ -32,7 +32,11 @@ extern "C" {
  * \addtogroup spa_handle
  * \{
  */
-
+/*handle的父类
+ * 此类由各插件继承扩展实现。
+ * 各插件继承扩展后的对象大小由factory->get_size()函数描述。
+ * 各插件继续扩展后的对象初始化工作由factory->init()函数描述。
+ * */
 struct spa_handle {
 	/** Version of this struct */
 #define SPA_VERSION_HANDLE	0
@@ -66,7 +70,8 @@ SPA_API_PLUGIN int
 spa_handle_get_interface(struct spa_handle *object,
 		const char *type, void **iface)
 {
-	return spa_api_func_r(int, -ENOTSUP, object, get_interface, 0, type, iface);
+	/*调用object->get_interface*/
+	return spa_api_func_r(int, -ENOTSUP, object, get_interface, 0/*版本号忽略*/, type, iface);
 }
 SPA_API_PLUGIN int
 spa_handle_clear(struct spa_handle *object)
@@ -110,7 +115,7 @@ SPA_API_PLUGIN void *spa_support_find(const struct spa_support *support,
 struct spa_handle_factory {
 	/** The version of this structure */
 #define SPA_VERSION_HANDLE_FACTORY	1
-	uint32_t version;
+	uint32_t version;/*版本号*/
 	/**
 	 * The name of the factory contains a logical name that describes
 	 * the function of the handle. Other plugins might contain an alternative
@@ -124,7 +129,7 @@ struct spa_handle_factory {
 	 *			device
 	 *  api.v4l2.source: an object to read from a v4l2 source.
 	 */
-	const char *name;
+	const char *name;/*指明factory的名称*/
 	/**
 	 * Extra information about the handles of this factory.
 	 */
@@ -182,6 +187,7 @@ SPA_API_PLUGIN size_t
 spa_handle_factory_get_size(const struct spa_handle_factory *object,
 		const struct spa_dict *params)
 {
+	/*调用factory->get_size函数，描述factory扩展后的handle对象大小*/
 	return spa_api_func_r(size_t, 0, object, get_size, 1, params);
 }
 SPA_API_PLUGIN int
@@ -189,6 +195,7 @@ spa_handle_factory_init(const struct spa_handle_factory *object,
 		struct spa_handle *handle, const struct spa_dict *info,
 		const struct spa_support *support, uint32_t n_support)
 {
+	/*调用factory->init函数*/
 	return spa_api_func_r(int, -ENOTSUP, object, init, 1, handle, info,
 			support, n_support);
 }

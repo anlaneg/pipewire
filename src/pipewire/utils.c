@@ -33,7 +33,7 @@
  * invocation and passed to the function until NULL is returned.
  */
 SPA_EXPORT
-const char *pw_split_walk(const char *str, const char *delimiter, size_t * len, const char **state)
+const char *pw_split_walk(const char *str, const char *delimiter/*分隔符*/, size_t * len/*出参，本次长度*/, const char **state/*入参，起始位置；出参，结束位置（下一次起始位置）*/)
 {
 	const char *s = *state ? *state : str;
 
@@ -42,9 +42,9 @@ const char *pw_split_walk(const char *str, const char *delimiter, size_t * len, 
 		return NULL;
 
 	*len = strcspn(s, delimiter);
-	*state = s + *len;
+	*state = s + *len;/*下次起始位置*/
 
-	return s;
+	return s;/*本次起始位置*/
 }
 
 /** Split a string based on delimiters

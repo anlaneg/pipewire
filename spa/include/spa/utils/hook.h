@@ -260,11 +260,11 @@ struct spa_interface {
 	if (SPA_LIKELY(SPA_CALLBACK_CHECK(o,method,version)))		\
 		((o)->method)(o, ##__VA_ARGS__);			\
 })
-#define spa_api_func_r(rtype,def,o,method,version,...)			\
+#define spa_api_func_r(rtype/*返回值类型*/,def/*默认值*/,o/*此对象的method方将被调用*/,method/*方法名称*/,version/*版本号*/,...)			\
 ({									\
 	rtype _res = def;						\
 	if (SPA_LIKELY(SPA_CALLBACK_CHECK(o,method,version)))		\
-		_res = ((o)->method)(o, ##__VA_ARGS__);			\
+		_res = ((o)->method)(o, ##__VA_ARGS__);/*调用method*/			\
 	_res;								\
 })
 #define spa_api_func_fast(o,method,...)					\
@@ -312,7 +312,7 @@ struct spa_interface {
 	spa_interface_call_fast(_i, struct type ##_methods,		\
 			method, version, ##__VA_ARGS__);		\
 })
-#define spa_api_method_fast_r(rtype,def,type,o,method,version,...)	\
+#define spa_api_method_fast_r(rtype/*返回值类型*/,def/*默认值*/,type/*类型前缀*/,o,method/*方法名称*/,version/*预期的版本号*/,...)	\
 ({									\
 	rtype _res = def;						\
 	struct spa_interface *_i = o;					\

@@ -41,35 +41,38 @@ static char *prgname;
 static struct spa_i18n *_pipewire_i18n = NULL;
 
 struct plugin {
-	struct spa_list link;
-	char *filename;
-	void *hnd;
-	spa_handle_factory_enum_func_t enum_func;
-	int ref;
-	const struct spa_log_topic_enum *log_topic_enum;
+	struct spa_list link;/*用于挂接到registry->plugins链表上*/
+	char *filename;/*此so对应的完整路径名称*/
+	void *hnd;/*so对应的handle*/
+	/*此接口接收两个参数，factory及index,其中index是一个入出参，入参时表示需要返回index
+	 * 编号的factory,出参时表示，下一个有效index值。此接口返回int,当返回0时表示index无效，’
+	 * 且factory未填充。返回1时恰相反;如果返回<0，则表示出错*/
+	spa_handle_factory_enum_func_t enum_func;/*spa_handle_factory_enum对应的符号函数*/
+	int ref;/*引用计数*/
+	const struct spa_log_topic_enum *log_topic_enum;/*spa_log_topic_enum对应的符号函数*/
 };
 
 struct handle {
 	struct spa_list link;
-	struct plugin *plugin;
-	char *factory_name;
+	struct plugin *plugin;/*对应的插件*/
+	char *factory_name;/*此handle对应的构造factory名称*/
 	int ref;
-	struct spa_handle handle SPA_ALIGNED(8);
+	struct spa_handle handle SPA_ALIGNED(8);/*由各factory自行扩展且需填充此handle基本信息*/
 };
 
 struct registry {
-	struct spa_list plugins;
+	struct spa_list plugins;/*已注册的所有插件*/
 	struct spa_list handles; /* all handles across all plugins by age (youngest first) */
 };
 
 struct support {
-	const char *plugin_dir;
-	const char *support_lib;
+	const char *plugin_dir;/*以':'分隔的一组目录，用于查找插件*/
+	const char *support_lib;/*so名称，默认为SUPPORTLIB*/
 	struct registry registry;
 	char *i18n_domain;
 	struct spa_interface i18n_iface;
 	struct spa_support support[MAX_SUPPORT];
-	uint32_t n_support;
+	uint32_t n_support;/*support数组长度*/
 	uint32_t init_count;
 	unsigned int in_valgrind:1;
 	unsigned int no_color:1;
@@ -87,14 +90,14 @@ find_plugin(struct registry *registry, const char *filename)
 	struct plugin *p;
 	spa_list_for_each(p, &registry->plugins, link) {
 		if (spa_streq(p->filename, filename))
-			return p;
+			return p;/*按路径名称插件已注册，返回*/
 	}
 	return NULL;
 }
 
 static struct plugin *
 open_plugin(struct registry *registry,
-	    const char *path, size_t len, const char *lib)
+	    const char *path/*目录*/, size_t len/*目录长度*/, const char *lib/*lib名称*/)
 {
 	struct plugin *plugin;
 	char filename[PATH_MAX];
@@ -102,19 +105,23 @@ open_plugin(struct registry *registry,
 	spa_handle_factory_enum_func_t enum_func;
 	int res;
 
+	/*格式化，获得文件完整路径*/
         if ((res = spa_scnprintf(filename, sizeof(filename), "%.*s/%s.so", (int)len, path, lib)) < 0)
 		goto error_out;
 
+        /*检查此文件对应的插件是否已加载*/
 	if ((plugin = find_plugin(registry, filename)) != NULL) {
-		plugin->ref++;
+		plugin->ref++;/*增加引用*/
 		return plugin;
 	}
 
         if ((hnd = dlopen(filename, RTLD_NOW)) == NULL) {
+        	/*打开此so*/
 		res = -ENOENT;
 		pw_log_debug("can't load %s: %s", filename, dlerror());
 		goto error_out;
         }
+        /*查找符号spa_handle_factory_enum*/
         if ((enum_func = dlsym(hnd, SPA_HANDLE_FACTORY_ENUM_FUNC_NAME)) == NULL) {
 		res = -ENOSYS;
 		pw_log_debug("can't find enum function: %s", dlerror());
@@ -160,25 +167,27 @@ unref_plugin(struct plugin *plugin)
 	}
 }
 
+/*在此插件中查找名称为factory_name的factory*/
 static const struct spa_handle_factory *find_factory(struct plugin *plugin, const char *factory_name)
 {
 	int res = -ENOENT;
 	uint32_t index;
         const struct spa_handle_factory *factory;
 
-        for (index = 0;;) {
+        for (index = 0/*从零开始*/;;) {
                 if ((res = plugin->enum_func(&factory, &index)) <= 0) {
                         if (res == 0)
-				break;
-                        goto out;
+				break;/*此插件所有factory遍历完成*/
+                        goto out;/*遇到错误*/
                 }
 		if (factory->version < 1) {
+			/*版本小于1的factory将被忽略*/
 			pw_log_warn("factory version %d < 1 not supported",
 					factory->version);
 			continue;
 		}
                 if (spa_streq(factory->name, factory_name))
-                        return factory;
+                        return factory;/*如果此factory名称与欲查找的匹配，则返回*/
 	}
 	res = -ENOENT;
 out:
@@ -210,10 +219,10 @@ uint32_t pw_get_support(struct spa_support *support, uint32_t max_support)
 	return n;
 }
 
-static struct spa_handle *load_spa_handle(const char *lib,
-		const char *factory_name,
+static struct spa_handle *load_spa_handle(const char *lib/*要加载的so名称*/,
+		const char *factory_name/*需要自so中查找的factory名称*/,
 		const struct spa_dict *info,
-		uint32_t n_support,
+		uint32_t n_support/*support数组大小*/,
 		const struct spa_support support[])
 {
 	struct support *sup = &global_support;
@@ -238,12 +247,14 @@ static struct spa_handle *load_spa_handle(const char *lib,
 	res = -ENOENT;
 
 	if (sup->plugin_dir == NULL) {
+		/*未设置插件目录，报错返回*/
 		pw_log_error("load lib: plugin directory undefined, set SPA_PLUGIN_DIR");
 		goto error_out;
 	}
+	/*加载注册plugin*/
 	while ((p = pw_split_walk(sup->plugin_dir, ":", &len, &state))) {
-		if ((plugin = open_plugin(&sup->registry, p, len, lib)) != NULL)
-			break;
+		if ((plugin = open_plugin(&sup->registry, p/*目录*/, len/*目录长度*/, lib)) != NULL)
+			break;/*加载成功*/
 		res = -errno;
 	}
 	if (plugin == NULL)
@@ -251,20 +262,23 @@ static struct spa_handle *load_spa_handle(const char *lib,
 
 	pthread_mutex_unlock(&support_lock);
 
+	/*在此plugin中查找名称为factory_name的factory*/
 	factory = find_factory(plugin, factory_name);
 	if (factory == NULL) {
 		res = -errno;
 		goto error_unref_plugin;
 	}
 
+	/*申请factory指明的handle实际大小*/
 	handle = calloc(1, sizeof(struct handle) + spa_handle_factory_get_size(factory, info));
 	if (handle == NULL) {
 		res = -errno;
 		goto error_unref_plugin;
 	}
 
+	/*初始化handle*/
 	if ((res = spa_handle_factory_init(factory,
-					&handle->handle, info,
+					&handle->handle/*各factroy需要自此位置开始初始化实际handle(当前实现各子类均以包含此handle结构体方式实现）*/, info,
 					support, n_support)) < 0) {
 		pw_log_debug("can't make factory instance '%s': %d (%s)",
 				factory_name, res, spa_strerror(res));
@@ -275,9 +289,9 @@ static struct spa_handle *load_spa_handle(const char *lib,
 	handle->ref = 1;
 	handle->plugin = plugin;
 	handle->factory_name = strdup(factory_name);
-	spa_list_prepend(&sup->registry.handles, &handle->link);
+	spa_list_prepend(&sup->registry.handles, &handle->link);/*注册至链表*/
 
-	return &handle->handle;
+	return &handle->handle;/*返回父类*/
 
 error_free_handle:
 	free(handle);
@@ -293,7 +307,7 @@ SPA_EXPORT
 struct spa_handle *pw_load_spa_handle(const char *lib,
 		const char *factory_name,
 		const struct spa_dict *info,
-		uint32_t n_support,
+		uint32_t n_support/*support数组长度*/,
 		const struct spa_support support[])
 {
 	struct spa_handle *handle;
@@ -496,7 +510,7 @@ void pw_init(int *argc, char **argv[])
 
 	pthread_mutex_lock(&init_lock);
 	if (support->init_count > 0)
-		goto done;
+		goto done;/*已初始化，跳出*/
 
 	pw_random_init();
 
@@ -516,11 +530,11 @@ void pw_init(int *argc, char **argv[])
 	init_i18n(support);
 
 	if ((str = getenv("SPA_PLUGIN_DIR")) == NULL)
-		str = PLUGINDIR;
+		str = PLUGINDIR;/*未设置环境变量，设置默认插件目录*/
 	support->plugin_dir = str;
 
 	if ((str = getenv("SPA_SUPPORT_LIB")) == NULL)
-		str = SUPPORTLIB;
+		str = SUPPORTLIB;/*未设置lib,设置默认lib名称*/
 	support->support_lib = str;
 
 	spa_list_init(&support->registry.plugins);

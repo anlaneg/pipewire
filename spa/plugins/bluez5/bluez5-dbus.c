@@ -6036,6 +6036,7 @@ static int adapter_register_application(struct spa_bt_adapter *a, bool bap)
 	spa_log_debug(monitor->log, "Registering bluez5 %s media application on adapter %s",
 			ep_type_name, a->path);
 
+	/*调用注册App接口*/
 	m = dbus_message_new_method_call(BLUEZ_SERVICE,
 	                                 a->path,
 	                                 BLUEZ_MEDIA_INTERFACE,
